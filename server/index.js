@@ -1,8 +1,15 @@
-const { Server } = require("socket.io");
+const socketio = require("socket.io");
+const express = require("express");
+const dotenv = require("dotenv");
+// const cors = require("cors");
+const http = require("http");
 
-const io = new Server(8000, {
-  cors: true,
+const app = express();
+const server = http.createServer(app);
+const io = socketio(server,{
+  cors:true
 });
+dotenv.config("./env");
 
 const emailToSocketIdMap = new Map();
 const socketidToEmailMap = new Map();
@@ -26,14 +33,17 @@ io.on("connection", (socket) => {
   socket.on("call:accepted", ({ to, ans }) => {
     io.to(to).emit("call:accepted", { from: socket.id, ans });
   });
-  
-  socket.on("peer:nego:needed",({to,offer})=>{
-    io.to(to).emit("peer:nego:needed",{from:socket.id,offer})
-  })
 
-  socket.on("peer:nego:done",({to,ans})=>{
-    console.log(ans)
-    io.to(to).emit("peer:nego:final",{from:socket.id,ans})
-  })
+  socket.on("peer:nego:needed", ({ to, offer }) => {
+    io.to(to).emit("peer:nego:needed", { from: socket.id, offer });
+  });
 
+  socket.on("peer:nego:done", ({ to, ans }) => {
+    console.log(ans);
+    io.to(to).emit("peer:nego:final", { from: socket.id, ans });
+  });
 });
+
+server.listen(process.env.PORT || 5000, () =>
+  console.log(`Server has started.`)
+);
